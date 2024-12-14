@@ -1,0 +1,3 @@
+[functions]
+[functions.clean-weekly-scores]
+verify_jwt = false
