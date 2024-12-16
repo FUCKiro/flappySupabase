@@ -93,8 +93,10 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
           {resetSuccess ? (
             <div className="text-center">
               <p className="text-lg mb-6">
-                Password reset instructions have been sent to your email.
-                Please check your inbox and spam folder.
+                Password reset instructions have been sent to your email. Please:
+                1. Check your inbox (and spam folder)
+                2. Click the reset link in the email
+                3. Set your new password on the reset page
               </p>
               <button
                 onClick={onClose}

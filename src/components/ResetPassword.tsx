@@ -13,19 +13,45 @@ export default function ResetPassword() {
   useEffect(() => {
     // Check if we have a valid session
     const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setHasSession(!!session);
+      const hashParams = new URLSearchParams(window.location.hash.substring(1));
+      const accessToken = hashParams.get('access_token');
       
-      if (!session) {
-        // If no session, redirect to home after 3 seconds
-        setTimeout(() => {
-          window.location.href = '/';
-        }, 3000);
+      if (!accessToken) {
+        console.error('No access token found in URL');
+        setHasSession(false);
+        return;
+      }
+
+      try {
+        // Set the session with the access token
+        const { data: { session }, error } = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: accessToken, // Use access token as refresh token
+        });
+
+        if (error) {
+          console.error('Error setting session:', error);
+          throw error;
+        }
+
+        setHasSession(!!session);
+      } catch (error) {
+        console.error('Error setting session:', error);
+        setHasSession(false);
       }
     };
     
     checkSession();
   }, []);
+
+  useEffect(() => {
+    if (!hasSession) {
+      const timer = setTimeout(() => {
+        window.location.href = '/';
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [hasSession]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

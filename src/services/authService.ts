@@ -95,7 +95,7 @@ export const signOut = async () => {
 
 export const resetPassword = async (email: string): Promise<void> => {
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${window.location.origin}/reset-password`,
+    redirectTo: `${import.meta.env.VITE_SITE_URL}/reset-password#`,
   });
   
   if (error) throw new Error(getAuthErrorMessage(error));
