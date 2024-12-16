@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { signUp, signIn } from '../services/authService';
+import { signUp, signIn, resetPassword } from '../services/authService';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -27,8 +27,7 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
 
     try {
       if (isForgotPassword) {
-        // Handle password reset through Supabase
-        throw new Error('Password reset not implemented');
+        await resetPassword(email);
         setResetSuccess(true);
       } else if (isLogin) {
         const user = await signIn(email, password);
@@ -86,7 +85,7 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
     return (
       <div 
         className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
-        onClick={handleModalClick}
+        onClick={onClose}
       >
         <div className="bg-white rounded-lg p-8 max-w-[400px] w-full">
           <h2 className="text-3xl font-bold mb-6">Reset Password</h2>
@@ -94,7 +93,8 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
           {resetSuccess ? (
             <div className="text-center">
               <p className="text-lg mb-6">
-                If an account exists with this email, you will receive password reset instructions.
+                Password reset instructions have been sent to your email.
+                Please check your inbox and spam folder.
               </p>
               <button
                 onClick={onClose}
@@ -149,7 +149,7 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
   return (
     <div 
       className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
-      onClick={handleModalClick}
+      onClick={onClose}
     >
       <div className="bg-white rounded-lg p-8 max-w-[400px] w-full">
         <h2 className="text-3xl font-bold mb-6">

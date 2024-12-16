@@ -93,6 +93,25 @@ export const signOut = async () => {
   if (error) throw new Error(getAuthErrorMessage(error));
 };
 
+export const resetPassword = async (email: string): Promise<void> => {
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${window.location.origin}/reset-password`,
+  });
+  
+  if (error) throw new Error(getAuthErrorMessage(error));
+};
+
+export const updatePassword = async (newPassword: string): Promise<void> => {
+  const { data, error } = await supabase.auth.updateUser({
+    password: newPassword
+  });
+
+  if (error) throw new Error(getAuthErrorMessage(error));
+  
+  // After successful password update, refresh the session
+  await supabase.auth.refreshSession();
+};
+
 export const getCurrentUser = async (): Promise<User | null> => {
   const { data: { session } } = await supabase.auth.getSession();
   const user = session?.user;
