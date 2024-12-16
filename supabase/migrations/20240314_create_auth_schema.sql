@@ -1,6 +1,30 @@
 -- Enable UUID extension
 create extension if not exists "uuid-ossp" schema extensions;
 
+-- Create profiles table for username uniqueness
+create table if not exists public.profiles (
+  id uuid references auth.users primary key,
+  email text unique not null,
+  username text unique not null check (length(username) >= 3 and length(username) <= 20),
+  created_at timestamptz default now()
+);
+
+-- Enable RLS on profiles
+alter table public.profiles enable row level security;
+
+-- Policies for profiles
+create policy "Public profiles are viewable by everyone"
+  on profiles for select
+  using (true);
+
+create policy "Users can insert their own profile"
+  on profiles for insert
+  with check (auth.uid() = id);
+
+create policy "Users can update own profile"
+  on profiles for update
+  using (auth.uid() = id);
+
 -- Create highscores table
 create table if not exists public.highscores (
   id uuid default uuid_generate_v4() primary key,

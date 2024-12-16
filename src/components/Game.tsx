@@ -1,7 +1,8 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback, useLayoutEffect } from 'react';
 import { useInterval } from '../hooks/useInterval';
 import { saveScore, getTopScores, type Score } from '../services/scoreService';
 import { getCurrentUser, signOut, type User } from '../services/authService';
+import { supabase } from '../services/supabaseClient';
 import AuthModal from './AuthModal';
 import { GameUI } from './GameUI';
 import { StartScreen } from './StartScreen';
@@ -42,12 +43,50 @@ function Game() {
   const lastTapTime = useRef<number>(0);
 
   useEffect(() => {
-    const loadInitialData = async () => {
-      const currentUser = await getCurrentUser();
-      setUser(currentUser);
-      await loadTopScores();
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth state change:', event, session?.user?.id);
+      if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
+        if (session?.user) {
+          const currentUser = {
+            id: session.user.id,
+            email: session.user.email!,
+            username: session.user.user_metadata?.username || 'Player'
+          };
+          setUser(currentUser);
+        }
+      } else if (event === 'SIGNED_OUT') {
+        console.log('User signed out');
+        setUser(null);
+        setGameStarted(false);
+        setGameOver(false);
+      }
+    });
+
+    // Initial load
+    const initializeAuth = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          const currentUser = {
+            id: session.user.id,
+            email: session.user.email!,
+            username: session.user.user_metadata?.username || 'Player'
+          };
+          setUser(currentUser);
+        }
+        await loadTopScores();
+      } catch (error) {
+        console.error('Error initializing auth:', error);
+      }
     };
-    loadInitialData();
+
+    initializeAuth();
+
+    // Cleanup subscription
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   const loadTopScores = async () => {

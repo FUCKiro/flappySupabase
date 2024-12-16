@@ -5,13 +5,29 @@ A fun and engaging web-based game featuring a seal as the main character, built 
 ## Setup
 
 1. Clone the repository
-2. Install dependencies with `npm install`
-3. Create a `.env` file in the root directory with your Supabase credentials:
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+3. Set up environment variables:
+   - Copy `.env.example` to `.env`:
+     ```bash
+     cp .env.example .env
+     ```
+   - Add your Supabase credentials to `.env`:
    ```env
    VITE_SUPABASE_URL=your-project-url
    VITE_SUPABASE_ANON_KEY=your-anon-key
    ```
-4. Run `npm run dev` to start the development server
+   
+   Note: In development mode, the app will work without credentials, but authentication
+   and data persistence will be mocked.
+
+4. Start the development server:
+   ```bash
+   npm run dev
+   ```
 
 ## Security
 
