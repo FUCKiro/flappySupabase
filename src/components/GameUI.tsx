@@ -26,14 +26,20 @@ export function GameUI({ score, highScore, user, onSignOut }: GameUIProps) {
         <div className="absolute top-4 left-1/2 -translate-x-1/2 z-30 bg-black/50 text-white px-3 py-1 rounded-full text-xs flex items-center gap-2">
           <span className="font-medium truncate max-w-[100px]">{user.username}</span>
           <button
-            onClick={() => setShowPasswordModal(true)}
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowPasswordModal(true);
+            }}
             className="hover:text-indigo-300"
             title="Change Password"
           >
             <Settings className="w-4 h-4" />
           </button>
           <button 
-            onClick={onSignOut}
+            onClick={(e) => {
+              e.stopPropagation();
+              onSignOut();
+            }}
             className="text-xs text-red-400 hover:text-red-300"
           >
             Sign Out
