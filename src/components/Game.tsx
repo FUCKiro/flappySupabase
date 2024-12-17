@@ -38,9 +38,71 @@ function Game() {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [topScores, setTopScores] = useState<Score[]>([]);
   const [isLoadingScores, setIsLoadingScores] = useState(true);
+  const [isLoadingUser, setIsLoadingUser] = useState(true);
   const sealImage = useRef<HTMLImageElement | null>(null);
   const backgroundImage = useRef<HTMLImageElement | null>(null);
   const lastTapTime = useRef<number>(0);
+
+  const startGame = useCallback(() => {
+    if (user) {
+      setGameStarted(true);
+      setGameOver(false);
+      setScore(0);
+      setPipes([]);
+      setBirdPosition(canvasHeight / 2);
+      setBirdVelocity(0);
+    }
+  }, [user, canvasHeight]);
+
+  const jump = useCallback(() => {
+    const now = Date.now();
+    if (now - lastTapTime.current < 200) return;
+    lastTapTime.current = now;
+
+    // Only allow jump if user is logged in
+    if (!user) {
+      setShowAuthModal(true);
+      return;
+    }
+
+    if (!gameStarted) {
+      startGame();
+      return;
+    }
+
+    if (gameOver) {
+      startGame();
+      return;
+    }
+
+    setBirdVelocity(JUMP_FORCE);
+  }, [gameStarted, gameOver, user, startGame]);
+
+  const handleGameOver = async () => {
+    setGameOver(true);
+    if (score > 0 && user) {
+      await saveScore(score, user.id, user.username);
+      await loadTopScores();
+    }
+  };
+
+  const handleLoginClick = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!user) setShowAuthModal(true);
+  }, [user]);
+
+  const handleCanvasClick = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    jump();
+  }, [jump]);
+
+  const handleTouch = useCallback((e: React.TouchEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    jump();
+  }, [jump]);
+
+  // Rest of the code remains the same...
 
   useEffect(() => {
     // Set up auth state listener
@@ -66,6 +128,7 @@ function Game() {
     // Initial load
     const initializeAuth = async () => {
       try {
+        setIsLoadingUser(true);
         const { data: { session } } = await supabase.auth.getSession();
         if (session?.user) {
           const currentUser = {
@@ -78,6 +141,8 @@ function Game() {
         await loadTopScores();
       } catch (error) {
         console.error('Error initializing auth:', error);
+      } finally {
+        setIsLoadingUser(false);
       }
     };
 
@@ -162,60 +227,6 @@ function Game() {
       backgroundImage.current = bg;
     };
   }, []);
-
-  const jump = useCallback(() => {
-    const now = Date.now();
-    if (now - lastTapTime.current < 200) return;
-    lastTapTime.current = now;
-
-    // Only allow jump if user is logged in
-    if (!user) {
-      setShowAuthModal(true);
-      return;
-    }
-
-    if (!gameStarted) {
-      setGameStarted(true);
-      setGameOver(false);
-      setScore(0);
-      setPipes([]);
-      setBirdPosition(canvasHeight / 2);
-    }
-
-    if (gameOver) {
-      setGameStarted(true);
-      setGameOver(false);
-      setScore(0);
-      setPipes([]);
-      setBirdPosition(canvasHeight / 2);
-    }
-
-    setBirdVelocity(JUMP_FORCE);
-  }, [gameStarted, gameOver, canvasHeight]);
-
-  const handleGameOver = async () => {
-    setGameOver(true);
-    if (score > 0 && user) {
-      await saveScore(score, user.id, user.username);
-      await loadTopScores();
-    }
-  };
-
-  const handleLoginClick = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation();
-    setShowAuthModal(true);
-  }, []);
-
-  const handleCanvasClick = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation();
-    jump();
-  }, [jump]);
-
-  const handleTouch = useCallback((e: React.TouchEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    jump();
-  }, [jump]);
 
   useInterval(
     () => {
@@ -385,9 +396,10 @@ function Game() {
           className="border-4 border-emerald-600 rounded-lg shadow-lg touch-none select-none z-20"
         />
 
-        {!gameStarted && !user && (
+        {!gameStarted && !isLoadingUser && (
           <div onClick={(e) => e.stopPropagation()}>
             <StartScreen
+              startGame={startGame}
               onLoginClick={handleLoginClick}
               user={user}
             />
